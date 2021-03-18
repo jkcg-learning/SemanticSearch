@@ -1,0 +1,59 @@
+version: "3"
+services:
+    elasticsearch:
+        image: elasticsearch:7.7.0
+        container_name: elasticsearch
+        hostname: elasticsearch
+        environment:
+            - "discovery.type=single-node"
+        ports:
+            - 9200:9200
+            - 9300:9300
+        networks:
+            - elknetwork
+    kibana:
+        image: kibana:7.7.0
+        container_name: kibana
+        hostname: kibana
+        ports:
+            - 5601:5601
+        links:
+            - elasticsearch:elasticsearch
+        depends_on:
+          - elasticsearch
+        networks:
+          - elknetwork
+    logstash:
+        image: logstash:7.7.0
+        container_name: logstash
+        hostname: logstash
+        ports:
+          - "5044:5044"
+          - "5000:5000/tcp"
+          - "5000:5000/udp"
+          - "9600:9600"
+        volumes:
+          - ./logstash:/usr/share/logstash/pipeline/
+        links:
+            - elasticsearch:elasticsearch
+        depends_on:
+          - elasticsearch
+        networks:
+          - elknetwork
+          
+    jupyter_original:
+        image: jupyter/tensorflow-notebook
+        container_name: jupyter_original
+        hostname: jupyter_original
+        ports:
+            - 8888:8888
+        volumes:
+          - ./code:/home/jovyan/work/code
+        depends_on:
+          - elasticsearch
+        networks:
+          - elknetwork
+          
+networks:
+    elknetwork:
+        driver: bridge
